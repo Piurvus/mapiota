@@ -17,20 +17,21 @@ indexList = [
     "8cc7a92e-a568-4584-974a-0f9de97d64c7",
     "1adf12ae-f6da-41f0-8bcd-db59250a2643",
     "3a3517c9-a5c3-4727-a4dd-e38e2b9b77e3",
+    "5d4d6c49-9969-47dd-8f95-f6eb1a412939",
+
 ]
 
-#df = getDataframe(indexList)
-#df.to_csv("testing.csv")
-df = pd.read_csv("testing.csv")
-df = df.sort_values(by= "timestamp")
+def prepareDFs():
 
-df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
+    df = getDataframe(indexList)
+    df.to_csv("testing.csv")
+    df = pd.read_csv("testing.csv")
+    df = df.sort_values(by= "timestamp")
 
-onlyfirst = df.groupby("sensor_id").first().reset_index()
-print(onlyfirst.iloc[0]["sensor_id"])
+    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
 
-print(onlyfirst.head(10))
-
+    onlyfirst = df.groupby("sensor_id").first().reset_index()
+    return onlyfirst, df
 
 
 app.layout = html.Div([
@@ -49,21 +50,22 @@ app.layout = html.Div([
                  ),
 
     html.Div(id='output', children=[]),
+    html.Button('Reload', id='submit', n_clicks=0),
+    html.Button('Back', id='back', n_clicks=0),
     html.Br(),
 
     dcc.Graph(id='map', figure={})
 ])
 
 click = None 
+clicked = 0
+clickback = 0
 
 def generateFig(option):
-    """Generates a ScatterMapbox for the given option"""
+    """Generates a ScatterMapbox or scatterplot for the given option"""
 
     # if node wasn't clicked yet
     if click == None:
-
-
-
         fig = px.scatter_mapbox(df, 
                             lon = onlyfirst['longitude'],
                             lat = onlyfirst['latitude'],
@@ -101,13 +103,30 @@ def generateFig(option):
     [
         Input(component_id='select', component_property='value'),
         Input('map', 'clickData'),
+        Input('submit', 'n_clicks'),
+        Input('back', 'n_clicks')
     ]
 )
-def update_graph(select, clickData):
+def update_graph(select, clickData, clicks, clickb):
+    """the main update function"""
+    # click on the map
     global click
     if not (clickData == None):
         click = clickData
 
+    # click the reload button -> reload the map and the data
+    global clicked
+    if (clicked != clicks):
+        global onlyfirst, df
+        onlyfirst, df = prepareDFs()
+        click = None
+        clicked = clicks
+
+    # click the back button -> go back to the map
+    global clickback
+    if (clickback != clickb):
+        click = None
+        clickback = clickb
 
     fig = generateFig(select)
 
@@ -115,4 +134,6 @@ def update_graph(select, clickData):
     return None, fig
 
 if __name__ == '__main__':
+    global onlyfirst, df
+    onlyfirst, df = prepareDFs()
     app.run_server(debug=True)
