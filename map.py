@@ -24,6 +24,8 @@ indexList = [
 df = pd.read_csv("testing.csv")
 df = df.sort_values(by= "timestamp")
 
+df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
+
 onlyfirst = df.groupby("sensor_id").first().reset_index()
 print(onlyfirst.iloc[0]["sensor_id"])
 
@@ -56,6 +58,8 @@ click = None
 
 def generateFig(option):
     """Generates a ScatterMapbox for the given option"""
+
+    # if node wasn't clicked yet
     if click == None:
 
 
@@ -63,24 +67,29 @@ def generateFig(option):
         fig = px.scatter_mapbox(df, 
                             lon = onlyfirst['longitude'],
                             lat = onlyfirst['latitude'],
-                            zoom = 10,
+                            zoom = 13,
                             color = onlyfirst[option],
                             size = onlyfirst['pressure'],
                             width = 1200,
                             height = 900,
+                            color_continuous_scale = 'temps'
                             )
 
         fig.update_layout(mapbox_style="open-street-map")
         fig.update_layout(margin={"r":0, "t":50, "l":0, "b":10})
+    
+    # if node was clicked
     else:
         id = click['points'][0]['pointNumber']
         fig = px.scatter(
             df[df["sensor_id"] == onlyfirst.iloc[id]["sensor_id"]], 
             x="timestamp", 
             y=option, 
-            color='humidity')
-
-
+            color='humidity',
+            color_continuous_scale='blues',
+            trendline="lowess",
+            trendline_options=dict(frac=0.1)
+            )
     
     return fig
 
