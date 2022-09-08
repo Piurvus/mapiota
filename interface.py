@@ -39,19 +39,24 @@ class IotaClient:
 
 def getDataframe(indList):
     """Returns the DataFrame with all the Data"""
-    payloads = retrieveData(indList)
-    return pd.DataFrame.from_dict(payloads)
+    payloads, msgs = retrieveData(indList)
+    df = pd.DataFrame.from_dict(payloads)
+    df['msg_id'] = msgs
+    return df
 
 def retrieveData(indList):
     """Retrieves Data from the given IndexList"""
     client = IotaClient()
 
     payloads = []
+    msg_ids = []
 
     for ind in indList:
         msgs = client.get_messages_by_index(ind)
         payloads = payloads + [json.loads(client.get_message_payload(msg)[ind]) for msg in msgs]
+        msg_ids = msg_ids + [msg['message_id'] for msg in msgs]
 
-    return payloads
+
+    return payloads, msg_ids
 
 
