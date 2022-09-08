@@ -3,23 +3,34 @@ import pandas as pd
 import dash
 from dash import html, dcc
 from dash.dependencies import Input, Output
+from interface import getDataframe
 
 app = dash.Dash(__name__)
 
-df = px.data.carshare()
+indexList = [
+    "5d4d6c49-9969-47dd-8f95-f6eb1a423b29",
+]
+
+
+#df = getDataframe(indexList)
+df = pd.read_csv("testing.csv")
+
+print(df.head(10))
 
 
 
 app.layout = html.Div([
-    html.H1("TITLE", style={'text-align': 'center'}),
+    html.H1("MAPIOTA", style={'text-align': 'center'}),
 
     dcc.Dropdown(id="select",
                  options=[
-                     {"label": "temperature", "value": 0},
-                     {"label": "pressure", "value": 1},
+                     {"label": "temperature", "value": "temperature"},
+                     {"label": "pressure", "value": "pressure"},
+                     {"label": "lux", "value": "lux"},
+                     {"label": "humidity", "value": "humidity"},
                      ],
                  multi=False,
-                 value=0,
+                 value="temperature",
                  style={'width': "60%"}
                  ),
 
@@ -28,28 +39,50 @@ app.layout = html.Div([
 
     dcc.Graph(id='map', figure={})
 ])
-@app.callback(
-    [Output(component_id='output', component_property='children'),
-     Output(component_id='map', component_property='figure')],
-    [Input(component_id='select', component_property='value'), Input('map', 'clickData')]
-)
-def update_graph(option_slctd, clickData):
+
+click = None 
+
+def generateFig(option):
+    """Generates a ScatterMapbox for the given option"""
+    if click == None:
+        fig = px.scatter_mapbox(df, 
+                            lon = df['longitude'],
+                            lat = df['latitude'],
+                            zoom = 10,
+                            color = df[option],
+                            size = df['altitude'],
+                            width = 1200,
+                            height = 900,
+                            )
+
+        fig.update_layout(mapbox_style="open-street-map")
+        fig.update_layout(margin={"r":0, "t":50, "l":0, "b":10})
+    else:
+        print(click)
+        fig = px.scatter(df, x="temperature", y="pressure", color='humidity')
+
+
     
-    # initiate sending data
-    print(clickData)
+    return fig
 
-    fig = px.scatter_mapbox(df, 
-                        lon = df['centroid_lon'],
-                        lat = df['centroid_lat'],
-                        zoom = 10,
-                        color = df['peak_hour'],
-                        size = df['car_hours'],
-                        width = 1200,
-                        height = 900,
-                        title = "blub")
+@app.callback(
+    [
+        Output(component_id='output', component_property='children'),
+        Output(component_id='map', component_property='figure')
+    ],
+    [
+        Input(component_id='select', component_property='value'),
+        Input('map', 'clickData'),
+    ]
+)
+def update_graph(select, clickData):
+    global click
+    if not (clickData == None):
+        click = clickData
 
-    fig.update_layout(mapbox_style="open-street-map")
-    fig.update_layout(margin={"r":0, "t":50, "l":0, "b":10})
+
+    fig = generateFig(select)
+
 
     return None, fig
 
