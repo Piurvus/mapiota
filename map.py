@@ -7,15 +7,27 @@ from interface import getDataframe
 
 app = dash.Dash(__name__)
 
+#indexList = [
+    #"5d4d6c49-9969-47dd-8f95-f6eb1a423b29",
+#]
+
 indexList = [
-    "5d4d6c49-9969-47dd-8f95-f6eb1a423b29",
+    "a279b738-bee5-4dce-aaeb-9ba4a7381439",
+    "63bb641a-086e-4144-ae87-2f80122d4a72",
+    "8cc7a92e-a568-4584-974a-0f9de97d64c7",
+    "1adf12ae-f6da-41f0-8bcd-db59250a2643",
+    "3a3517c9-a5c3-4727-a4dd-e38e2b9b77e3",
 ]
 
-
 #df = getDataframe(indexList)
+#df.to_csv("testing.csv")
 df = pd.read_csv("testing.csv")
+df = df.sort_values(by= "timestamp")
 
-print(df.head(10))
+onlyfirst = df.groupby("sensor_id").first().reset_index()
+print(onlyfirst.iloc[0]["sensor_id"])
+
+print(onlyfirst.head(10))
 
 
 
@@ -45,12 +57,15 @@ click = None
 def generateFig(option):
     """Generates a ScatterMapbox for the given option"""
     if click == None:
+
+
+
         fig = px.scatter_mapbox(df, 
-                            lon = df['longitude'],
-                            lat = df['latitude'],
+                            lon = onlyfirst['longitude'],
+                            lat = onlyfirst['latitude'],
                             zoom = 10,
-                            color = df[option],
-                            size = df['altitude'],
+                            color = onlyfirst[option],
+                            size = onlyfirst['pressure'],
                             width = 1200,
                             height = 900,
                             )
@@ -58,8 +73,12 @@ def generateFig(option):
         fig.update_layout(mapbox_style="open-street-map")
         fig.update_layout(margin={"r":0, "t":50, "l":0, "b":10})
     else:
-        print(click)
-        fig = px.scatter(df, x="temperature", y="pressure", color='humidity')
+        id = click['points'][0]['pointNumber']
+        fig = px.scatter(
+            df[df["sensor_id"] == onlyfirst.iloc[id]["sensor_id"]], 
+            x="timestamp", 
+            y=option, 
+            color='humidity')
 
 
     
