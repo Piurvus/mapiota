@@ -20,8 +20,8 @@ indexList = [
 def prepareDFs():
     """returns the dataframe and the onlyfirst dataframe consisting of only one entry per sensor"""
 
-    #df = getDataframe(indexList)
-    #df.to_csv("testing.csv")
+    df = getDataframe(indexList)
+    df.to_csv("testing.csv")
     df = pd.read_csv("testing.csv")
     df = df.sort_values(by= "timestamp")
 
