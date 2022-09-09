@@ -8,7 +8,7 @@ Simply run the following command to install all requirements.
 ```bash
 pip3 install -r requirements.txt
 ```
-Then to run the application type:
+Then to run the application:
 ```bash
 python3 map.py
 ```
