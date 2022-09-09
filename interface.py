@@ -51,11 +51,14 @@ def retrieveData(indList):
     payloads = []
     msg_ids = []
 
+    # going through each index of the list
     for ind in indList:
+        # retrieve single message
         msgs = client.get_messages_by_index(ind)
+        # list of dictionaries of msgs
         payloads = payloads + [json.loads(client.get_message_payload(msg)[ind]) for msg in msgs]
+        # list of msg_ids
         msg_ids = msg_ids + [msg['message_id'] for msg in msgs]
-
 
     return payloads, msg_ids
 

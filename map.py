@@ -7,10 +7,7 @@ from interface import getDataframe
 
 app = dash.Dash(__name__)
 
-#indexList = [
-    #"5d4d6c49-9969-47dd-8f95-f6eb1a423b29",
-#]
-
+# all the sensors (necessary to retrieve the msgs)
 indexList = [
     "a279b738-bee5-4dce-aaeb-9ba4a7381439",
     "63bb641a-086e-4144-ae87-2f80122d4a72",
@@ -18,22 +15,25 @@ indexList = [
     "1adf12ae-f6da-41f0-8bcd-db59250a2643",
     "3a3517c9-a5c3-4727-a4dd-e38e2b9b77e3",
     "5d4d6c49-9969-47dd-8f95-f6eb1a412939",
-
 ]
 
 def prepareDFs():
+    """returns the dataframe and the onlyfirst dataframe consisting of only one entry per sensor"""
 
-    df = getDataframe(indexList)
-    df.to_csv("testing.csv")
+    #df = getDataframe(indexList)
+    #df.to_csv("testing.csv")
     df = pd.read_csv("testing.csv")
     df = df.sort_values(by= "timestamp")
 
+    # convert timestamps to dates
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
 
+    # only one entry per sensor
     onlyfirst = df.groupby("sensor_id").first().reset_index()
     return onlyfirst, df
 
 
+# the web app
 app.layout = html.Div([
     html.H1("MAPIOTA", style={'text-align': 'center'}),
 
@@ -46,7 +46,7 @@ app.layout = html.Div([
                      ],
                  multi=False,
                  value="temperature",
-                 style={'width': "60%"}
+                 style={'width': "30%"}
                  ),
 
     html.Div(id='output', children=[]),
@@ -57,6 +57,7 @@ app.layout = html.Div([
     dcc.Graph(id='map', figure={})
 ])
 
+# nicely named variables for the button clicks and clicks on map
 click = None 
 clicked = 0
 clickback = 0
@@ -66,15 +67,16 @@ def generateFig(option):
 
     # if node wasn't clicked yet
     if click == None:
-        fig = px.scatter_mapbox(df, 
-                            lon = onlyfirst['longitude'],
-                            lat = onlyfirst['latitude'],
+        fig = px.scatter_mapbox(onlyfirst, 
+                            lon = 'longitude',
+                            lat = 'latitude',
                             zoom = 13,
-                            color = onlyfirst[option],
-                            size = onlyfirst['pressure'],
-                            width = 1200,
+                            color = option,
+                            size = option,
+                            width = 2000,
                             height = 900,
-                            color_continuous_scale = 'temps'
+                            color_continuous_scale = 'thermal',
+                            title = option
                             )
 
         fig.update_layout(mapbox_style="open-street-map")
@@ -90,7 +92,8 @@ def generateFig(option):
             color='humidity',
             color_continuous_scale='blues',
             trendline="lowess",
-            trendline_options=dict(frac=0.1)
+            trendline_options=dict(frac=0.1),
+            title = option
             )
     
     return fig
@@ -129,7 +132,6 @@ def update_graph(select, clickData, clicks, clickb):
         clickback = clickb
 
     fig = generateFig(select)
-
 
     return None, fig
 
